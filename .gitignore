@@ -1,0 +1,12 @@
+# Data files
+data/raw/
+data/db/*.sqlite
+
+# R artifacts
+.Rhistory
+.RData
+.Rproj.user/
+
+# Environment/secrets
+.env
+*.key
