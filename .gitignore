@@ -1,6 +1,8 @@
 # Data files
 data/raw/
 data/db/*.sqlite
+output/db/prospect_comps.sqlite
+pda/
 
 # R artifacts
 .Rhistory
@@ -10,3 +12,7 @@ data/db/*.sqlite
 # Environment/secrets
 .env
 *.key
+
+# Local build notes
+prospect_comps_build_log.md
+HOW_TO_RAW_DATA_TO_SIMILARITY_SCORES.md

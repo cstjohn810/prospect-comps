@@ -1,0 +1,9 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Prospect Comps",
+    "section": "",
+    "text": "Minor League Similarity Search\n      Prospect Comps\n      Search historical minor league hitters and compare each player's career-to-date minor league profile against its ten closest matches.\n    \n\n    \n      Player\n      \n      Loading database...\n    \n  \n\n  \n    \n      \n        Matches\n        0\n      \n      \n    \n\n    \n      \n        Select a player\n        Each profile combines the player's minor league seasons with denominator weights, recency weights, age context, and level context.\n      \n\n      \n        \n          \n            Selected Player\n            \n          \n          \n        \n\n        \n          \n\n\n\nRank\nPlayer\nScore\nPA\nLevels\nZBB\nZK\nZISO\nSpeed"
+  }
+]

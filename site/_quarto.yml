@@ -1,0 +1,19 @@
+project:
+  type: website
+  output-dir: ../docs
+
+website:
+  title: "Prospect Comps"
+  page-navigation: false
+  navbar: false
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: false
+    page-layout: full
+    include-after-body:
+      - text: |
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+          <script src="app.js"></script>

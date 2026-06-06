@@ -1,0 +1,70 @@
+---
+title: "Prospect Comps"
+format:
+  html:
+    title-block-banner: false
+---
+
+```{=html}
+<main class="app-shell">
+  <section class="search-panel" aria-labelledby="app-title">
+    <div>
+      <p class="eyebrow">Minor League Similarity Search</p>
+      <h1 id="app-title">Prospect Comps</h1>
+      <p class="lede">Search historical minor league hitters and compare each player's career-to-date minor league profile against its ten closest matches.</p>
+    </div>
+
+    <div class="search-box">
+      <label for="player-search">Player</label>
+      <input id="player-search" type="search" autocomplete="off" placeholder="Type a player name" disabled>
+      <div id="status-line" class="status-line">Loading database...</div>
+    </div>
+  </section>
+
+  <section class="content-grid" aria-live="polite">
+    <aside class="results-panel">
+      <div class="panel-header">
+        <h2>Matches</h2>
+        <span id="result-count">0</span>
+      </div>
+      <div id="player-results" class="player-results"></div>
+    </aside>
+
+    <section class="detail-panel">
+      <div id="empty-state" class="empty-state">
+        <h2>Select a player</h2>
+        <p>Each profile combines the player's minor league seasons with denominator weights, recency weights, age context, and level context.</p>
+      </div>
+
+      <div id="comparison-view" class="comparison-view hidden">
+        <div class="selected-player">
+          <div>
+            <p class="eyebrow">Selected Player</p>
+            <h2 id="selected-name"></h2>
+          </div>
+          <dl id="selected-meta" class="selected-meta"></dl>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Score</th>
+                <th>PA</th>
+                <th>Levels</th>
+                <th>ZBB</th>
+                <th>ZK</th>
+                <th>ZISO</th>
+                <th>Speed</th>
+              </tr>
+            </thead>
+            <tbody id="comparison-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+```
