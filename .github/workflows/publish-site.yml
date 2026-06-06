@@ -1,4 +1,7 @@
-name: Publish site
+- name: Check out repository
+  uses: actions/checkout@v4
+  with:
+    lfs: true
 
 on:
   push:
