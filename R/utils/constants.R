@@ -51,25 +51,30 @@ ROLLING_WINDOW_YEARS <- 3L
 
 # Minimum plate appearance thresholds for inclusion in scoring
 # Prevents unreliable statistics from small sample sizes from distorting similarity
-MIN_PA_SIMILARITY <- 250L   # Minimum PA for player to be scored/compared
+MIN_PA_SIMILARITY <- 100L   # Minimum PA for player to be scored/compared
 
 # Number of top comparable players to retain
 TOP_N_COMPS <- 20L
 
 # Baseball level numeric scale for sorting and filtering
-# 1=Rookie (FRk, Rk, R, DSL), 2=Single-A (A-), 3=Single-A (A),
-# 4=Double-A+ (A+, int, Wnt), 5=Triple-A (AA), 6=Major League (AAA), 7=MLB
+# 1=Rookie (FRk, Rk, R, DSL, FCL, ACL), 2=Single-A (A-), 3=Single-A (A),
+# 4=High-A (A+, int, Wnt), 5=Double-A (AA), 6=Triple-A (AAA), 7=MLB
+# FCL = Florida Complex League, ACL = Arizona Complex League (post-2020 restructuring)
 LEVEL_SCALE <- c(
   "FRk" = 1,
-  "Rk" = 1,
-  "R" = 1,
+  "Rk"  = 1,
+  "R"   = 1,
   "DSL" = 1,
-  "A-" = 2,
-  "A" = 3,
-  "A+" = 4,
+  "FCL" = 1,   # Florida Complex League (replaced GCL after 2020)
+  "ACL" = 1,   # Arizona Complex League (replaced AZL after 2020)
+  "GCL" = 1,   # Gulf Coast League (historical)
+  "AZL" = 1,   # Arizona League (historical)
+  "A-"  = 2,
+  "A"   = 3,
+  "A+"  = 4,
   "int" = 4,
   "Wnt" = 4,
-  "AA" = 5,
+  "AA"  = 5,
   "AAA" = 6,
   "MLB" = 7
 )
@@ -95,4 +100,19 @@ PLAYER_SEASONS_EXPORT_COLS <- c(
   "pa", "ab", "x1b", "x2b", "x3b", "hr", "bb", "so", "hbp", "sb", "cs", "r",
   "bb_pa", "k_pa", "obp", "slg", "ops", "iso", "speed",
   "zbb", "zk", "zobp", "zslg", "zops", "ziso", "recency_weight"
+)
+
+# MLB Stats API sport IDs used by baseballr::mlb_stats()
+# These map to the levels in LEVEL_SCALE; DSL/foreign rookie leagues are
+# excluded — they are not present in the historical feather.
+# A- (sport_id 15) is included but the MLB API rarely returns it; rows will
+# appear only in seasons where short-season ball was active.
+MLB_SPORT_IDS <- c(
+  "MLB" = 1,
+  "AAA" = 11,
+  "AA"  = 12,
+  "A+"  = 13,
+  "A"   = 14,
+  "A-"  = 15,
+  "Rk"  = 16
 )

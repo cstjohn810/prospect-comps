@@ -8,6 +8,7 @@
 # Output: one row per (player, level) — e.g. separate AAA and AA rows per player.
 build_player_levels <- function(player_seasons) {
   player_seasons |>
+    dplyr::filter(!is.na(lvl), lvl != "") |>
     dplyr::group_by(mlbid, lvl) |>
     dplyr::summarise(
       player_level_id = paste(dplyr::first(mlbid), dplyr::first(lvl), sep = "::"),
@@ -55,8 +56,21 @@ aggregate_player_profile <- function(player_seasons_df) {
 
   latest_year <- max(.x$year, na.rm = TRUE)
   latest_rows <- .x[.x$year == latest_year, , drop = FALSE]
-  latest_level_numeric <- max(latest_rows$level_numeric, na.rm = TRUE)
-  latest_level <- latest_rows$lvl[which.max(latest_rows$level_numeric)]
+
+  # Guard against all-NA level_numeric (lvl value not in LEVEL_SCALE).
+  # which.max returns integer(0) on all-NA, so fall back to first row's lvl.
+  valid_level <- !is.na(latest_rows$level_numeric)
+  if (any(valid_level)) {
+    latest_level_numeric <- max(latest_rows$level_numeric, na.rm = TRUE)
+    latest_level <- latest_rows$lvl[which.max(latest_rows$level_numeric)]
+  } else {
+    latest_level_numeric <- NA_real_
+    latest_level <- dplyr::first(latest_rows$lvl)
+    warning("[aggregate_player_profile] Unknown lvl value(s) for player: ",
+            dplyr::first(.x$name), " — lvl: ",
+            paste(unique(latest_rows$lvl), collapse = ", "),
+            ". Add to LEVEL_SCALE in constants.R.", call. = FALSE)
+  }
 
   data.frame(
     name = dplyr::first(.x$name),
@@ -109,6 +123,7 @@ build_player_profiles <- function(player_seasons) {
     )
 
   milb_seasons |>
+    dplyr::filter(!is.na(lvl), lvl != "") |>
     dplyr::group_by(mlbid) |>
     dplyr::group_modify(~aggregate_player_profile(.x)) |>
     dplyr::ungroup() |>

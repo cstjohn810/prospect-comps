@@ -31,6 +31,7 @@ source("R/utils/math_utils.R")
 source("R/utils/database.R")
 source("R/similarity/hitter_aggregation.R")
 source("R/similarity/hitter_scoring.R")
+source("R/ingest/fetch_current_season.R")
 
 # ==============================================================================
 # STRING HELPERS
@@ -310,15 +311,36 @@ build_hitter_similarity_database <- function(
   private_db = file.path("data", "db", "private_prospect_comps.sqlite"),
   public_db = file.path("output", "db", "prospect_comps.sqlite"),
   top_n = TOP_N_COMPS,
-  min_pa = MIN_PA_SIMILARITY
+  min_pa = MIN_PA_SIMILARITY,
+  append_current_season = TRUE,   # set FALSE to skip the live API fetch
+  current_season = as.integer(format(Sys.Date(), "%Y"))
 ) {
   # Phase 1 & 2: Load raw data, compute rates, build league context
   raw_df <- arrow::read_feather(input_feather, col_select = dplyr::all_of(RAW_INPUT_COLS)) |>
     dplyr::mutate(
       year = as.integer(year),
-      age = as.numeric(age),
-      level_numeric = level_value(lvl)
-    ) |>
+      age  = as.numeric(age)
+    )
+
+  # Optionally splice in live data for the current season.
+  # Any rows for current_season already in the feather are removed first so
+  # the API data is the single source of truth for the current year.
+  if (append_current_season) {
+    live_df <- fetch_current_season(season = current_season)
+    n_replaced <- sum(raw_df$year == current_season)
+    if (n_replaced > 0) {
+      message("[build] Replacing ", n_replaced, " existing row(s) for ", current_season,
+              " in feather with fresh API data.")
+    }
+    raw_df <- raw_df |>
+      dplyr::filter(year != current_season) |>
+      dplyr::bind_rows(live_df)
+    message("[build] Combined dataset: ", nrow(raw_df), " rows (",
+            min(raw_df$year), "-", max(raw_df$year), ")")
+  }
+
+  raw_df <- raw_df |>
+    dplyr::mutate(level_numeric = level_value(lvl)) |>
     add_hitter_rates()
 
   league_context <- build_league_context(raw_df)
