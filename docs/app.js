@@ -25,16 +25,20 @@ function rowsFromResult(result) {
 }
 
 function query(sql, params = []) {
-  const statement = state.db.prepare(sql);
-  statement.bind(params);
-  const rows = [];
-
-  while (statement.step()) {
-    rows.push(statement.getAsObject());
+  try {
+    const statement = state.db.prepare(sql);
+    statement.bind(params);
+    const rows = [];
+    while (statement.step()) {
+      rows.push(statement.getAsObject());
+    }
+    statement.free();
+    return rows;
+  } catch (err) {
+    console.error("[query] SQL failed:", err.message, "\nSQL:", sql, "\nParams:", params);
+    setStatus(`Query error: ${err.message}`, true);
+    return [];
   }
-
-  statement.free();
-  return rows;
 }
 
 function formatNumber(value, digits = 0) {
@@ -65,12 +69,13 @@ function renderResults(rows) {
   const fragment = document.createDocumentFragment();
 
   for (const row of rows) {
+    const id = String(row.mlbid);  // dataset.id is always string; normalise so all comparisons are consistent
     const button = document.createElement("button");
     button.className = "result-button";
     button.type = "button";
-    button.dataset.id = row.batter;
+    button.dataset.id = id;
 
-    if (row.batter === state.selectedId) {
+    if (id === state.selectedId) {
       button.classList.add("active");
     }
 
@@ -82,7 +87,7 @@ function renderResults(rows) {
       </span>
       <span class="level-badge">${row.latest_level || "-"}</span>
     `;
-    button.addEventListener("click", () => selectPlayer(row.batter));
+    button.addEventListener("click", () => selectPlayer(id));
     fragment.appendChild(button);
   }
 
@@ -91,6 +96,7 @@ function renderResults(rows) {
 
 function searchPlayers(term) {
   const trimmed = term.trim();
+  console.log("[search] term:", JSON.stringify(trimmed), "length:", trimmed.length);
 
   if (trimmed.length < 2) {
     els.resultCount.textContent = "0";
@@ -100,7 +106,7 @@ function searchPlayers(term) {
 
   const rows = query(
     `
-    SELECT batter, name, career_pa, avg_age, min_year, max_year, latest_level
+    SELECT mlbid, name, career_pa, avg_age, min_year, max_year, latest_level
     FROM player_profiles
     WHERE name LIKE ?
     ORDER BY
@@ -112,6 +118,7 @@ function searchPlayers(term) {
     [`%${trimmed}%`, `${trimmed}%`]
   );
 
+  console.log("[search] rows returned:", rows.length, rows.slice(0, 3));
   renderResults(rows);
 }
 
@@ -148,31 +155,37 @@ function renderComparisons(rows) {
   `).join("");
 }
 
-function selectPlayer(batter) {
-  state.selectedId = batter;
+function selectPlayer(mlbid) {
+  const id = String(mlbid);  // normalise to string to match button.dataset.id
+  state.selectedId = id;
 
   const player = query(
     `
     SELECT *
     FROM player_profiles
-    WHERE batter = ?
+    WHERE mlbid = ?
     LIMIT 1
     `,
-    [batter]
+    [id]
   )[0];
 
-  if (!player) return;
+  if (!player) {
+    console.warn("[selectPlayer] no player found for id:", id);
+    return;
+  }
 
   const comparisons = query(
     `
     SELECT *
     FROM hitter_career_similarity
-    WHERE batter = ?
+    WHERE mlbid = ?
     ORDER BY rank
     LIMIT 10
     `,
-    [batter]
+    [id]
   );
+
+  console.log("[selectPlayer]", player.name, "— comparisons:", comparisons.length);
 
   els.empty.classList.add("hidden");
   els.comparison.classList.remove("hidden");
@@ -181,7 +194,7 @@ function selectPlayer(batter) {
   renderComparisons(comparisons);
 
   for (const button of els.results.querySelectorAll(".result-button")) {
-    button.classList.toggle("active", button.dataset.id === batter);
+    button.classList.toggle("active", button.dataset.id === id);
   }
 }
 
@@ -205,13 +218,19 @@ async function init() {
     const buffer = await response.arrayBuffer();
     state.db = new SQL.Database(new Uint8Array(buffer));
 
+    // Log actual table columns so we can confirm schema matches what the queries expect
+    const profileCols = rowsFromResult(state.db.exec("PRAGMA table_info(player_profiles)")).map(r => r.name);
+    const simCols = rowsFromResult(state.db.exec("PRAGMA table_info(hitter_career_similarity)")).map(r => r.name);
+    console.log("[init] player_profiles columns:", profileCols);
+    console.log("[init] hitter_career_similarity columns:", simCols);
+
     const metadata = rowsFromResult(state.db.exec("SELECT value FROM metadata WHERE key = 'scoring_version' LIMIT 1"));
     const version = metadata[0]?.value || "ready";
     setStatus(`Database loaded: ${version}`);
     els.search.disabled = false;
     els.search.focus();
   } catch (error) {
-    console.error(error);
+    console.error("[init] failed:", error);
     setStatus("Could not load the browser database. Check that db/prospect_comps_site.sqlite was published with the site.", true);
   }
 }
